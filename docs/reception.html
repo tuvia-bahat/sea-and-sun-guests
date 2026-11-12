@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מסך קבלה - סי אנד סאן</title>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=3">
+<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Frank+Ruhl+Libre:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=4">
 <style>
   .wide { max-width: 1000px; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 6px 0 10px; }
@@ -31,7 +31,17 @@
 </head>
 <body>
 <div class="wrap" id="login" hidden>
-  <div class="hero"><div class="logo">🌊☀️</div><h1>מגדלי סי אנד סאן</h1><p>כניסת פקידי קבלה</p><svg viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0,30 C150,60 300,0 450,25 C600,50 750,5 900,28 C1050,50 1130,20 1200,30 L1200,60 L0,60 Z"/></svg></div>
+  <header class="hero"><div class="hero-text"><p class="eyebrow">מחסום · קבלה</p><h1>מגדלי סי אנד סאן</h1><p class="sub">כניסת פקידי קבלה</p></div>
+  <svg class="skyline" viewBox="0 0 480 150" aria-hidden="true">
+      <circle cx="372" cy="78" r="40" fill="#f2a900"/>
+      <circle cx="372" cy="78" r="58" fill="#f2a900" opacity=".14"/>
+      <g fill="var(--tower)"><rect x="150" y="22" width="52" height="128" rx="2"/><rect x="208" y="58" width="44" height="92" rx="2"/><rect x="258" y="86" width="30" height="64" rx="2"/></g>
+      <g fill="var(--tower-2)"><rect x="150" y="22" width="12" height="128"/><rect x="208" y="58" width="10" height="92"/></g>
+      <g stroke="#f7c948" stroke-width="3" stroke-dasharray="4 11" opacity=".75"><line x1="172" y1="34" x2="172" y2="138"/><line x1="186" y1="34" x2="186" y2="138"/><line x1="230" y1="70" x2="230" y2="138"/><line x1="242" y1="70" x2="242" y2="138"/></g>
+      <path class="sea" d="M0,128 C60,118 120,138 190,128 C260,118 320,138 390,128 C430,122 460,128 480,126 L480,150 L0,150 Z"/>
+      <path d="M0,128 C60,118 120,138 190,128 C260,118 320,138 390,128 C430,122 460,128 480,126" fill="none" stroke="var(--sea-line)" stroke-width="2"/>
+    </svg>
+</header>
   <form class="card lift" id="loginForm">
     <div class="field"><label for="password">סיסמה</label>
     <input id="password" type="password" autocomplete="off">
@@ -60,7 +70,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=3"></script>
+<script src="config.js?v=4"></script>
 <script>
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
