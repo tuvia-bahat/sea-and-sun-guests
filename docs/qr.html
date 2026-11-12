@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ברקוד לשלט המחסום</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; text-align: center; margin: 0; padding: 30px; color: #12263a; background: #fff; }
+  h1 { font-size: 44px; margin: 0 0 6px; color: #0a6ea8; }
+  h2 { font-size: 30px; margin: 0 0 24px; font-weight: 600; }
+  #qr { display: inline-block; border: 6px solid #0a6ea8; border-radius: 20px; padding: 18px; background: #fff; }
+  #qr img, #qr canvas { display: block; width: 360px; max-width: 70vw; height: auto; }
+  p { font-size: 24px; }
+  .url { direction: ltr; color: #5b6f82; font-size: 18px; }
+  @media print { .noprint { display: none; } }
+</style>
+</head>
+<body>
+  <h1>מגדלי סי אנד סאן</h1>
+  <h2>אורחים: סרקו את הברקוד ומלאו פרטים<br>לפני הכניסה למחסום</h2>
+  <div id="qr"></div>
+  <p>מספר רכב · טלפון · למי אתם מגיעים</p>
+  <p class="url" id="url"></p>
+  <p class="noprint"><button onclick="print()">הדפסה</button> · <a href="reception.html">חזרה</a></p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const url = new URL('./', location.href).href;
+  document.getElementById('url').textContent = url;
+  new QRCode(document.getElementById('qr'), { text: url, width: 360, height: 360, correctLevel: QRCode.CorrectLevel.Q });
+</script>
+</body>
+</html>

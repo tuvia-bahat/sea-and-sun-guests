@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מסך קבלה - סי אנד סאן</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="style.css">
 <style>
   .wide { max-width: 1000px; }
   header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 6px 0 10px; }
@@ -29,14 +29,25 @@
 </style>
 </head>
 <body>
-<div class="wrap wide">
+<div class="wrap" id="login" hidden>
+  <div class="brand"><h1>מגדלי סי אנד סאן</h1><p>כניסת פקידי קבלה</p></div>
+  <form class="card" id="loginForm">
+    <label for="email">אימייל</label>
+    <input id="email" type="text" autocomplete="username" class="ltr">
+    <label for="password">סיסמה</label>
+    <input id="password" type="password" autocomplete="current-password">
+    <div class="err" id="loginErr"></div>
+    <button class="full" type="submit">כניסה</button>
+  </form>
+</div>
+<div class="wrap wide" id="app" hidden>
   <header>
     <h1>מסך קבלה · מחסום</h1>
     <nav>
       <span id="conn"></span>
       <button class="ghost" id="sound">🔔 צליל: פעיל</button>
-      <a class="btn ghost" href="/reception/qr">ברקוד להדפסה</a>
-      <a class="btn ghost" href="/reception/logout">יציאה</a>
+      <a class="btn ghost" href="qr.html">ברקוד להדפסה</a>
+      <button class="ghost" id="logout">יציאה</button>
     </nav>
   </header>
 
@@ -49,7 +60,11 @@
   <div id="done"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
 <script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const $ = s => document.querySelector(s);
 let seen = null, soundOn = true, data = {pending: [], done: []};
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -98,26 +113,44 @@ function render(newIds = new Set()) {
 }
 
 async function act(id, action) {
-  await fetch(`/api/visitors/${id}/${action}`, {method: 'POST'});
+  const patch = action === 'undo' ? {status: 'pending', handled_at: null}
+    : {status: action === 'enter' ? 'entered' : 'rejected', handled_at: new Date().toISOString()};
+  await sb.from('visitors').update(patch).eq('id', id);
   load();
 }
 
 async function load() {
-  try {
-    const r = await fetch('/api/visitors');
-    if (r.status === 401) return location.href = '/reception/login';
-    data = await r.json();
-    $('#conn').textContent = '';
-    const ids = new Set(data.pending.map(v => v.id));
-    const fresh = seen ? new Set([...ids].filter(i => !seen.has(i))) : new Set();
-    if (fresh.size) beep();
-    seen = ids;
-    render(fresh);
-  } catch { $('#conn').textContent = '⚠ אין חיבור לשרת'; }
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  const [p, d] = await Promise.all([
+    sb.from('visitors').select('*').eq('status', 'pending').order('created_at'),
+    sb.from('visitors').select('*').neq('status', 'pending').gte('created_at', midnight.toISOString())
+      .order('handled_at', {ascending: false}).limit(200)
+  ]);
+  if (p.error || d.error) { $('#conn').textContent = '⚠ אין חיבור לשרת'; return; }
+  $('#conn').textContent = '';
+  data = {pending: p.data, done: d.data};
+  const ids = new Set(data.pending.map(v => v.id));
+  const fresh = seen ? new Set([...ids].filter(i => !seen.has(i))) : new Set();
+  if (fresh.size) beep();
+  seen = ids;
+  render(fresh);
 }
 
+let timer;
+function show(loggedIn) {
+  $('#login').hidden = loggedIn; $('#app').hidden = !loggedIn;
+  clearInterval(timer);
+  if (loggedIn) { seen = null; load(); timer = setInterval(load, 3000); }
+}
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const {error} = await sb.auth.signInWithPassword({email: $('#email').value.trim(), password: $('#password').value});
+  $('#loginErr').textContent = error ? 'אימייל או סיסמה שגויים' : '';
+  if (!error) show(true);
+});
+$('#logout').onclick = async () => { await sb.auth.signOut(); show(false); };
+sb.auth.getSession().then(({data}) => show(!!data.session));
 $('#search').addEventListener('input', () => render());
-load(); setInterval(load, 3000);
 </script>
 </body>
 </html>

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>רישום אורח - סי אנד סאן</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">
+    <h1>מגדלי סי אנד סאן</h1>
+    <p>רישום אורחים במחסום</p>
+  </div>
+
+  <form id="form" class="card" novalidate>
+    <label for="plate">מספר רכב</label>
+    <input id="plate" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="לדוגמה 123-45-678" class="ltr">
+    <div class="err" data-for="plate"></div>
+
+    <label for="phone">מספר טלפון</label>
+    <input id="phone" type="tel" autocomplete="tel" maxlength="15" placeholder="050-1234567" class="ltr">
+    <div class="err" data-for="phone"></div>
+
+    <label for="host">למי אתם מגיעים?</label>
+    <input id="host" type="text" autocomplete="off" maxlength="80" placeholder="שם הדייר / מספר דירה">
+    <div class="err" data-for="host"></div>
+
+    <div class="err" id="general"></div>
+    <button class="full" id="submit" type="submit">שליחה</button>
+  </form>
+
+  <div id="done" class="card center" hidden>
+    <div class="big-icon state-pending" id="icon">⏳</div>
+    <h2 id="title">הפרטים נשלחו</h2>
+    <p id="msg">פקיד הקבלה קיבל את הרישום שלכם. נא להמתין במחסום.</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = s => document.querySelector(s);
+const form = $('#form');
+
+const cleanPlate = v => { const d = v.replace(/\D/g, ''); return d.length >= 5 && d.length <= 8 ? d : null; };
+const cleanPhone = v => {
+  let d = v.replace(/[\s\-]/g, '');
+  if (d.startsWith('+972')) d = '0' + d.slice(4);
+  return /^0\d{8,9}$/.test(d) ? d : null;
+};
+const cleanHost = v => { v = v.replace(/\s+/g, ' ').trim(); return v.length >= 2 && v.length <= 80 ? v : null; };
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  document.querySelectorAll('.err').forEach(x => x.textContent = '');
+  document.querySelectorAll('input').forEach(x => x.classList.remove('invalid'));
+  const plate = cleanPlate($('#plate').value), phone = cleanPhone($('#phone').value), host = cleanHost($('#host').value);
+  const errs = {};
+  if (!plate) errs.plate = 'מספר רכב לא תקין (5-8 ספרות)';
+  if (!phone) errs.phone = 'מספר טלפון לא תקין';
+  if (!host) errs.host = 'נא לציין למי אתם מגיעים';
+  if (Object.keys(errs).length) {
+    for (const [k, v] of Object.entries(errs)) {
+      document.querySelector(`[data-for="${k}"]`).textContent = v;
+      document.getElementById(k).classList.add('invalid');
+    }
+    return;
+  }
+  const btn = $('#submit'); btn.disabled = true;
+  const token = crypto.randomUUID();
+  const { error } = await sb.from('visitors').insert({ token, plate, phone, host });
+  if (error) {
+    $('#general').textContent = /too_many/.test(error.message)
+      ? 'נשלחו יותר מדי רישומים. נא לפנות לפקיד הקבלה.' : 'שגיאה בשליחה. נסו שוב.';
+    btn.disabled = false;
+    return;
+  }
+  form.hidden = true; $('#done').hidden = false;
+  try { localStorage.setItem('last', JSON.stringify({ plate: $('#plate').value, phone: $('#phone').value })); } catch {}
+  poll(token);
+});
+
+try {
+  const last = JSON.parse(localStorage.getItem('last') || 'null');
+  if (last) { $('#plate').value = last.plate; $('#phone').value = last.phone; }
+} catch {}
+
+function poll(token) {
+  const t = setInterval(async () => {
+    const { data: status } = await sb.rpc('get_status', { t: token });
+    if (status === 'entered') {
+      clearInterval(t);
+      $('#icon').textContent = '✅'; $('#icon').className = 'big-icon state-entered';
+      $('#title').textContent = 'אושרה כניסה'; $('#msg').textContent = 'המחסום נפתח. נסיעה טובה!';
+    } else if (status === 'rejected') {
+      clearInterval(t);
+      $('#icon').textContent = '⛔'; $('#icon').className = 'big-icon state-rejected';
+      $('#title').textContent = 'לא ניתן להיכנס'; $('#msg').textContent = 'נא לפנות לפקיד הקבלה במחסום.';
+    }
+  }, 3000);
+}
+</script>
+</body>
+</html>
