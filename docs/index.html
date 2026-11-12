@@ -70,7 +70,7 @@ form.addEventListener('submit', async e => {
   }
   const btn = $('#submit'); btn.disabled = true;
   const token = crypto.randomUUID();
-  const { error } = await sb.from('visitors').insert({ token, plate, phone, host });
+  const { error } = await sb.from('seasun_visitors').insert({ token, plate, phone, host });
   if (error) {
     $('#general').textContent = /too_many/.test(error.message)
       ? 'נשלחו יותר מדי רישומים. נא לפנות לפקיד הקבלה.' : 'שגיאה בשליחה. נסו שוב.';
@@ -89,7 +89,7 @@ try {
 
 function poll(token) {
   const t = setInterval(async () => {
-    const { data: status } = await sb.rpc('get_status', { t: token });
+    const { data: status } = await sb.rpc('seasun_get_status', { t: token });
     if (status === 'entered') {
       clearInterval(t);
       $('#icon').textContent = '✅'; $('#icon').className = 'big-icon state-entered';

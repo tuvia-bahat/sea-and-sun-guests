@@ -115,15 +115,15 @@ function render(newIds = new Set()) {
 async function act(id, action) {
   const patch = action === 'undo' ? {status: 'pending', handled_at: null}
     : {status: action === 'enter' ? 'entered' : 'rejected', handled_at: new Date().toISOString()};
-  await sb.from('visitors').update(patch).eq('id', id);
+  await sb.from('seasun_visitors').update(patch).eq('id', id);
   load();
 }
 
 async function load() {
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   const [p, d] = await Promise.all([
-    sb.from('visitors').select('*').eq('status', 'pending').order('created_at'),
-    sb.from('visitors').select('*').neq('status', 'pending').gte('created_at', midnight.toISOString())
+    sb.from('seasun_visitors').select('*').eq('status', 'pending').order('created_at'),
+    sb.from('seasun_visitors').select('*').neq('status', 'pending').gte('created_at', midnight.toISOString())
       .order('handled_at', {ascending: false}).limit(200)
   ]);
   if (p.error || d.error) { $('#conn').textContent = '⚠ אין חיבור לשרת'; return; }
