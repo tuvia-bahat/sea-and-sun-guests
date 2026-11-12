@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מסך קבלה - סי אנד סאן</title>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <style>
   .wide { max-width: 1000px; }
   #app > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 22px 0 6px; }
@@ -22,7 +22,24 @@
   .actions { display: flex; gap: 8px; }
   .actions button { height: 48px; padding: 0 22px; font-size: 17px; }
   .empty { color: var(--muted); padding: 24px; text-align: center; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
-  .badge { font-weight: 700; }
+  .badge { font-weight: 700; white-space: nowrap; }
+  .count.muted { background: var(--muted); color: #fff; }
+  .row[data-plate] { cursor: pointer; transition: border-color .15s; }
+  .row[data-plate]:hover { border-color: var(--primary); }
+  .tabs { display: flex; gap: 4px; margin-top: 18px; border-bottom: 1.5px solid var(--border); }
+  .tabs button { background: transparent; color: var(--muted); height: 46px; padding: 0 18px; border-radius: 0; border-bottom: 3px solid transparent; margin-bottom: -1.5px; font-size: 17px; font-weight: 600; }
+  .tabs button:hover { background: var(--primary-soft); color: var(--text); }
+  .tabs button.on { color: var(--text); border-bottom-color: var(--sun); }
+  dialog { width: min(560px, calc(100% - 32px)); max-height: 86vh; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--text); font-family: inherit; }
+  dialog::backdrop { background: rgba(8, 30, 45, .55); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  .dlg-head button { height: 40px; font-size: 15px; padding: 0 14px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .stats div { background: var(--primary-soft); border-radius: 12px; padding: 10px; text-align: center; }
+  .stats b { display: block; font-size: 26px; font-weight: 800; }
+  .stats span { color: var(--muted); font-size: 14px; }
+  .visits { display: flex; flex-direction: column; max-height: 46vh; overflow-y: auto; border-top: 1px solid var(--border); }
+  .visit { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); }
   #search { margin: 10px 0 0; }
   #conn { font-size: 13px; color: var(--bad); }
   @media (max-width: 700px) { .row { grid-template-columns: 1fr 1fr; } .actions { grid-column: 1 / -1; } .actions button { flex: 1; } }
@@ -58,17 +75,38 @@
     </nav>
   </header>
 
-  <input id="search" type="search" placeholder="חיפוש לפי מספר רכב, טלפון או דייר...">
+  <input id="search" type="search" placeholder="חיפוש מספר רכב, טלפון או דייר בכל ההיסטוריה">
 
-  <h2>ממתינים בשער <span class="count" id="pcount">0</span></h2>
-  <div id="pending"></div>
+  <div class="tabs" id="tabs">
+    <button class="on" data-tab="today">היום</button>
+    <button data-tab="history">כל ההיסטוריה</button>
+  </div>
 
-  <h2>טופלו היום <span class="count" id="dcount" style="background:var(--muted)">0</span></h2>
-  <div id="done"></div>
+  <section id="todayView">
+    <h2>ממתינים בשער <span class="count" id="pcount">0</span></h2>
+    <div id="pending"></div>
+    <h2>טופלו היום <span class="count muted" id="dcount">0</span></h2>
+    <div id="done"></div>
+  </section>
+
+  <section id="historyView" hidden>
+    <div id="history"></div>
+    <p class="center"><button class="ghost" id="more" hidden>טעינת רשומות נוספות</button></p>
+  </section>
+
+  <section id="searchView" hidden>
+    <h2>תוצאות חיפוש <span class="count" id="scount">0</span></h2>
+    <div id="results"></div>
+  </section>
 </div>
 
+<dialog id="plateDlg">
+  <div class="dlg-head"><div id="plateTitle"></div><button class="ghost" id="plateClose">סגירה</button></div>
+  <div id="plateBody"></div>
+</dialog>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=5"></script>
+<script src="config.js?v=8"></script>
 <script>
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -78,39 +116,53 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const fmtPlate = p => p.length === 8 ? `${p.slice(0,3)}-${p.slice(3,5)}-${p.slice(5)}` : p.length === 7 ? `${p.slice(0,2)}-${p.slice(2,5)}-${p.slice(5)}` : p;
 const fmtPhone = p => p.length === 10 ? `${p.slice(0,3)}-${p.slice(3)}` : p;
 const time = iso => iso ? new Date(iso).toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}) : '';
+const fmtDate = iso => new Date(iso).toLocaleDateString('he-IL', {day: 'numeric', month: 'numeric', year: '2-digit'});
+const fmtDT = iso => iso ? `${fmtDate(iso)} ${time(iso)}` : '';
+const STATUS = {pending: 'ממתין', entered: 'נכנס', rejected: 'נדחה'};
 const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 1 ? 'עכשיו' : `לפני ${m} דק׳`; };
 
-$('#sound').onclick = () => { soundOn = !soundOn; $('#sound').textContent = soundOn ? 'צליל: פעיל' : 'צליל: כבוי'; };
-
+// צליל: דפדפנים מאפשרים שמע רק אחרי לחיצה בדף, לכן משתמשים בהקשר שמע אחד ומפעילים אותו בכל לחיצה
+let actx = null;
+function audio() {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  } catch { return null; }
+}
+function updateSoundBtn() {
+  const running = actx && actx.state === 'running';
+  $('#sound').textContent = !soundOn ? 'צליל: כבוי' : running ? 'צליל: פעיל' : 'צליל: לחצו להפעלה';
+}
 function beep() {
   if (!soundOn) return;
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator(), g = ctx.createGain();
-    o.connect(g); g.connect(ctx.destination); o.frequency.value = 880; g.gain.value = 0.15;
-    o.start(); o.stop(ctx.currentTime + 0.25);
-  } catch {}
+  const ctx = audio();
+  if (!ctx || ctx.state !== 'running') { updateSoundBtn(); return; }
+  [[880, 0], [1175, 0.22]].forEach(([freq, at]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + at;
+    o.type = 'sine'; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+    o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.4);
+  });
 }
-
-function matches(v, q) {
-  if (!q) return true;
-  const digits = q.replace(/\D/g, '');
-  return v.host.includes(q) || (digits && (v.plate.includes(digits) || v.phone.includes(digits)));
-}
+['click', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, () => { audio(); setTimeout(updateSoundBtn, 150); }, {passive: true}));
+$('#sound').onclick = () => { soundOn = !soundOn; audio(); if (soundOn) setTimeout(beep, 100); setTimeout(updateSoundBtn, 200); updateSoundBtn(); };
+updateSoundBtn();
 
 function render(newIds = new Set()) {
-  const q = $('#search').value.trim();
-  const p = data.pending.filter(v => matches(v, q)), d = data.done.filter(v => matches(v, q));
+  const p = data.pending, d = data.done;
   $('#pcount').textContent = data.pending.length; $('#dcount').textContent = data.done.length;
   $('#pending').innerHTML = p.length ? p.map(v => `
-    <div class="row ${newIds.has(v.id) ? 'new' : ''}">
+    <div class="row ${newIds.has(v.id) ? 'new' : ''}" data-plate="${esc(v.plate)}">
       <div><span class="plate-chip">${esc(fmtPlate(v.plate))}</span><div class="small">${esc(ago(v.created_at))}, ${esc(time(v.created_at))}</div></div>
       <div><div class="small">טלפון</div><a class="ltr" href="tel:${esc(v.phone)}" style="color:inherit;direction:ltr;display:inline-block">${esc(fmtPhone(v.phone))}</a></div>
       <div><div class="small">מגיע אל</div><b>${esc(v.host)}</b></div>
       <div class="actions"><button class="ok" onclick="act(${v.id},'enter')">הכנס ✔</button><button class="bad" onclick="act(${v.id},'reject')">דחה</button></div>
     </div>`).join('') : '<div class="empty">אין אורחים ממתינים</div>';
   $('#done').innerHTML = d.length ? d.map(v => `
-    <div class="row" style="opacity:.85">
+    <div class="row" style="opacity:.85" data-plate="${esc(v.plate)}">
       <div><span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span><div class="small">נרשם ${esc(time(v.created_at))}</div></div>
       <div class="ltr small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
       <div>${esc(v.host)}</div>
@@ -126,6 +178,7 @@ async function act(id, action) {
   const {error} = await sb.rpc('seasun_handle', {pw: getPw(), vid: id, new_status: st});
   if (error) return alert('הפעולה נכשלה. נסו שוב.');
   load();
+  if (tab !== 'today' || $('#search').value.trim()) refreshView();
 }
 
 async function load() {
@@ -163,7 +216,85 @@ $('#loginForm').addEventListener('submit', async e => {
 });
 $('#logout').onclick = () => { try { sessionStorage.removeItem('pw'); } catch {} show(false); };
 show(!!getPw());
-$('#search').addEventListener('input', () => render());
+
+// ---------- היסטוריה וחיפוש ----------
+let tab = 'today', searchSeq = 0, hist = {rows: [], loading: false};
+const histRow = v => `
+  <div class="row" data-plate="${esc(v.plate)}">
+    <div><span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span><div class="small">${esc(fmtDT(v.created_at))}</div></div>
+    <div class="ltr small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
+    <div>${esc(v.host)}</div>
+    <div><span class="badge state-${v.status}">${STATUS[v.status]}</span></div>
+  </div>`;
+
+function handleErr(error) {
+  if (/unauthorized/.test(error.message)) show(false); else $('#conn').textContent = '⚠ אין חיבור לשרת';
+}
+
+function setTab(t) {
+  tab = t;
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  refreshView();
+}
+
+function refreshView() {
+  const q = $('#search').value.trim();
+  $('#tabs').hidden = !!q;
+  $('#todayView').hidden = !!q || tab !== 'today';
+  $('#historyView').hidden = !!q || tab !== 'history';
+  $('#searchView').hidden = !q;
+  if (q) runSearch(q); else if (tab === 'history') loadHistory(true);
+}
+
+async function loadHistory(reset) {
+  if (hist.loading) return;
+  hist.loading = true;
+  const {data: rows, error} = await sb.rpc('seasun_history', {pw: getPw(), q: '', lim: 50, off: reset ? 0 : hist.rows.length});
+  hist.loading = false;
+  if (error) return handleErr(error);
+  hist.rows = reset ? rows : hist.rows.concat(rows);
+  $('#history').innerHTML = hist.rows.length ? hist.rows.map(histRow).join('') : '<div class="empty">עדיין אין היסטוריה</div>';
+  $('#more').hidden = rows.length < 50;
+}
+
+async function runSearch(q) {
+  const seq = ++searchSeq;
+  const {data: rows, error} = await sb.rpc('seasun_history', {pw: getPw(), q, lim: 100, off: 0});
+  if (seq !== searchSeq) return;
+  if (error) return handleErr(error);
+  $('#scount').textContent = rows.length;
+  $('#results').innerHTML = rows.length ? rows.map(histRow).join('') : '<div class="empty">לא נמצאו תוצאות</div>';
+}
+
+async function openPlate(plate) {
+  $('#plateTitle').innerHTML = `<span class="plate-chip">${esc(fmtPlate(plate))}</span>`;
+  $('#plateBody').innerHTML = '<div class="empty">טוען…</div>';
+  $('#plateDlg').showModal();
+  const {data: rows, error} = await sb.rpc('seasun_plate_history', {pw: getPw(), p: plate});
+  if (error || !rows.length) { $('#plateBody').innerHTML = '<div class="empty">לא נמצאה היסטוריה</div>'; return; }
+  const n = st => rows.filter(v => v.status === st).length;
+  const hosts = [...new Set(rows.map(v => v.host))];
+  $('#plateBody').innerHTML = `
+    <div class="stats"><div><b>${rows.length}</b><span>רישומים</span></div><div><b>${n('entered')}</b><span>נכנסו</span></div><div><b>${n('rejected')}</b><span>נדחו</span></div></div>
+    <p class="small">ביקורים אצל: ${hosts.map(esc).join(', ')}. הרישום הראשון: ${esc(fmtDate(rows[rows.length - 1].created_at))}.</p>
+    <div class="visits">${rows.map(v => `
+      <div class="visit">
+        <div><b>${esc(fmtDT(v.created_at))}</b><div class="small">${esc(v.host)}</div></div>
+        <div class="small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
+        <span class="badge state-${v.status}">${STATUS[v.status]}${v.status !== 'pending' && v.handled_at ? ' ' + esc(time(v.handled_at)) : ''}</span>
+      </div>`).join('')}</div>`;
+}
+
+document.addEventListener('click', e => {
+  const row = e.target.closest('.row[data-plate]');
+  if (row && !e.target.closest('.actions, a')) openPlate(row.dataset.plate);
+  if (e.target === $('#plateDlg')) $('#plateDlg').close();
+});
+$('#plateClose').onclick = () => $('#plateDlg').close();
+$('#more').onclick = () => loadHistory(false);
+document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
+let searchTimer;
+$('#search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(refreshView, 300); });
 </script>
 </body>
 </html>
