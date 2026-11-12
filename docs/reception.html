@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>מסך קבלה - סי אנד סאן</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <style>
   .wide { max-width: 1000px; }
@@ -30,11 +31,11 @@
 </head>
 <body>
 <div class="wrap" id="login" hidden>
-  <div class="brand"><h1>מגדלי סי אנד סאן</h1><p>כניסת פקידי קבלה</p></div>
-  <form class="card" id="loginForm">
-    <label for="password">סיסמה</label>
+  <div class="hero"><div class="logo">🌊☀️</div><h1>מגדלי סי אנד סאן</h1><p>כניסת פקידי קבלה</p><svg viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0,30 C150,60 300,0 450,25 C600,50 750,5 900,28 C1050,50 1130,20 1200,30 L1200,60 L0,60 Z"/></svg></div>
+  <form class="card lift" id="loginForm">
+    <div class="field"><label for="password">סיסמה</label>
     <input id="password" type="password" autocomplete="off">
-    <div class="err" id="loginErr"></div>
+    <div class="err" id="loginErr"></div></div>
     <button class="full" type="submit">כניסה</button>
   </form>
 </div>

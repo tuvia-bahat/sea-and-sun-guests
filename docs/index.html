@@ -3,37 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b5f80">
 <title>רישום אורח - סי אנד סאן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="wrap">
-  <div class="brand">
+  <div class="hero">
+    <div class="logo">🌊☀️</div>
     <h1>מגדלי סי אנד סאן</h1>
-    <p>רישום אורחים במחסום</p>
+    <p>רישום אורחים לפני הכניסה למחסום</p>
+    <svg viewBox="0 0 1200 60" preserveAspectRatio="none" aria-hidden="true"><path d="M0,30 C150,60 300,0 450,25 C600,50 750,5 900,28 C1050,50 1130,20 1200,30 L1200,60 L0,60 Z"/></svg>
   </div>
 
-  <form id="form" class="card" novalidate>
-    <label for="plate">מספר רכב</label>
-    <input id="plate" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="לדוגמה 123-45-678" class="ltr">
-    <div class="err" data-for="plate"></div>
+  <form id="form" class="card lift" novalidate>
+    <div class="field">
+      <label for="plate">מספר רכב<span class="req">*</span><span class="hint">7 או 8 ספרות</span></label>
+      <div class="plate-box" id="plateBox">
+        <div class="flag"><i>🇮🇱</i>IL</div>
+        <input id="plate" type="text" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="12-345-67" required aria-required="true">
+      </div>
+      <div class="err" data-for="plate"></div>
+    </div>
 
-    <label for="phone">מספר טלפון</label>
-    <input id="phone" type="tel" autocomplete="tel" maxlength="15" placeholder="050-1234567" class="ltr">
-    <div class="err" data-for="phone"></div>
+    <div class="field">
+      <label for="phone">מספר טלפון<span class="req">*</span></label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="12" placeholder="050-123-4567" class="ltr" required aria-required="true">
+      <div class="err" data-for="phone"></div>
+    </div>
 
-    <label for="host">למי אתם מגיעים?</label>
-    <input id="host" type="text" autocomplete="off" maxlength="80" placeholder="שם הדייר / מספר דירה">
-    <div class="err" data-for="host"></div>
+    <div class="field">
+      <label for="host">למי אתם מגיעים?<span class="req">*</span></label>
+      <input id="host" type="text" autocomplete="off" maxlength="80" placeholder="שם הדייר או מספר דירה" required aria-required="true">
+      <div class="err" data-for="host"></div>
+    </div>
 
-    <div class="err" id="general"></div>
-    <button class="full" id="submit" type="submit">שליחה</button>
+    <div class="err center" id="general"></div>
+    <button class="full" id="submit" type="submit">שליחה לקבלה</button>
+    <div class="note">כל השדות חובה · הפרטים נראים רק לצוות הקבלה</div>
   </form>
 
-  <div id="done" class="card center" hidden>
-    <div class="big-icon state-pending" id="icon">⏳</div>
-    <h2 id="title">הפרטים נשלחו</h2>
-    <p id="msg">פקיד הקבלה קיבל את הרישום שלכם. נא להמתין במחסום.</p>
+  <div id="done" class="card lift center" hidden>
+    <div class="big-icon state-pending pulse" id="icon">⏳</div>
+    <h2 id="title" style="margin:6px 0">הפרטים נשלחו</h2>
+    <p id="msg" style="margin:0;color:var(--muted)">פקיד הקבלה קיבל את הרישום שלכם.<br>נא להמתין במחסום.</p>
   </div>
 </div>
 
@@ -44,37 +60,60 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const $ = s => document.querySelector(s);
 const form = $('#form');
 
-const cleanPlate = v => { const d = v.replace(/\D/g, ''); return d.length >= 5 && d.length <= 8 ? d : null; };
+// ---- ניקוי ואימות ----
+const digits = v => v.replace(/\D/g, '');
+const cleanPlate = v => { const d = digits(v); return d.length === 7 || d.length === 8 ? d : null; };
 const cleanPhone = v => {
-  let d = v.replace(/[\s\-]/g, '');
+  let d = v.replace(/[\s\-()]/g, '');
   if (d.startsWith('+972')) d = '0' + d.slice(4);
+  else if (d.startsWith('972')) d = '0' + d.slice(3);
   return /^0\d{8,9}$/.test(d) ? d : null;
 };
 const cleanHost = v => { v = v.replace(/\s+/g, ' ').trim(); return v.length >= 2 && v.length <= 80 ? v : null; };
 
+// ---- עיצוב תוך כדי הקלדה ----
+$('#plate').addEventListener('input', e => {
+  const d = digits(e.target.value).slice(0, 8);
+  e.target.value = d.length <= 7 ? [d.slice(0, 2), d.slice(2, 5), d.slice(5)].filter(Boolean).join('-')
+                                 : [d.slice(0, 3), d.slice(3, 5), d.slice(5)].filter(Boolean).join('-');
+});
+$('#phone').addEventListener('input', e => {
+  const d = digits(e.target.value).slice(0, 10);
+  e.target.value = d.length > 3 ? d.slice(0, 3) + '-' + d.slice(3) : d;
+});
+
+const rules = {
+  plate: [cleanPlate, v => !digits(v) ? 'נא למלא מספר רכב' : 'מספר רכב חייב להכיל 7 או 8 ספרות'],
+  phone: [cleanPhone, v => !v.trim() ? 'נא למלא מספר טלפון' : 'מספר טלפון לא תקין'],
+  host:  [cleanHost,  v => 'נא לציין למי אתם מגיעים'],
+};
+function check(k, showOk = true) {
+  const el = $('#' + k), [fn, msg] = rules[k], val = fn(el.value);
+  const box = k === 'plate' ? $('#plateBox') : el;
+  box.classList.toggle('invalid', !val);
+  document.querySelector(`[data-for="${k}"]`).textContent = val ? '' : msg(el.value);
+  return val;
+}
+for (const k of Object.keys(rules)) {
+  $('#' + k).addEventListener('blur', () => check(k));
+  $('#' + k).addEventListener('input', () => { if ($('#' + k).classList.contains('invalid') || $('#plateBox').classList.contains('invalid')) check(k); });
+}
+
 form.addEventListener('submit', async e => {
   e.preventDefault();
-  document.querySelectorAll('.err').forEach(x => x.textContent = '');
-  document.querySelectorAll('input').forEach(x => x.classList.remove('invalid'));
-  const plate = cleanPlate($('#plate').value), phone = cleanPhone($('#phone').value), host = cleanHost($('#host').value);
-  const errs = {};
-  if (!plate) errs.plate = 'מספר רכב לא תקין (5-8 ספרות)';
-  if (!phone) errs.phone = 'מספר טלפון לא תקין';
-  if (!host) errs.host = 'נא לציין למי אתם מגיעים';
-  if (Object.keys(errs).length) {
-    for (const [k, v] of Object.entries(errs)) {
-      document.querySelector(`[data-for="${k}"]`).textContent = v;
-      document.getElementById(k).classList.add('invalid');
-    }
-    return;
-  }
-  const btn = $('#submit'); btn.disabled = true;
+  $('#general').textContent = '';
+  const vals = {};
+  let firstBad = null;
+  for (const k of Object.keys(rules)) { vals[k] = check(k); if (!vals[k] && !firstBad) firstBad = k; }
+  if (firstBad) { $('#' + firstBad).focus(); return; }
+
+  const btn = $('#submit'); btn.disabled = true; btn.textContent = 'שולח…';
   const token = crypto.randomUUID();
-  const { error } = await sb.from('seasun_visitors').insert({ token, plate, phone, host });
+  const { error } = await sb.from('seasun_visitors').insert({ token, ...vals });
   if (error) {
     $('#general').textContent = /too_many/.test(error.message)
       ? 'נשלחו יותר מדי רישומים. נא לפנות לפקיד הקבלה.' : 'שגיאה בשליחה. נסו שוב.';
-    btn.disabled = false;
+    btn.disabled = false; btn.textContent = 'שליחה לקבלה';
     return;
   }
   form.hidden = true; $('#done').hidden = false;
@@ -90,13 +129,14 @@ try {
 function poll(token) {
   const t = setInterval(async () => {
     const { data: status } = await sb.rpc('seasun_get_status', { t: token });
+    const icon = $('#icon');
     if (status === 'entered') {
       clearInterval(t);
-      $('#icon').textContent = '✅'; $('#icon').className = 'big-icon state-entered';
+      icon.textContent = '✅'; icon.className = 'big-icon state-entered';
       $('#title').textContent = 'אושרה כניסה'; $('#msg').textContent = 'המחסום נפתח. נסיעה טובה!';
     } else if (status === 'rejected') {
       clearInterval(t);
-      $('#icon').textContent = '⛔'; $('#icon').className = 'big-icon state-rejected';
+      icon.textContent = '⛔'; icon.className = 'big-icon state-rejected';
       $('#title').textContent = 'לא ניתן להיכנס'; $('#msg').textContent = 'נא לפנות לפקיד הקבלה במחסום.';
     }
   }, 3000);
