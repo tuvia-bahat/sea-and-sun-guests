@@ -85,3 +85,7 @@ button.ghost:hover, .btn.ghost:hover { background: var(--primary-soft); color: v
 .done-title { font-family: var(--display); font-size: 28px; font-weight: 800; margin: 0 0 6px; }
 .done-msg { margin: 0; color: var(--muted); }
 .state-pending { color: var(--warn); } .state-entered { color: var(--ok); } .state-rejected { color: var(--bad); }
+
+/* מספר רכב כלוחית קטנה ברשימות */
+.plate-chip { display: inline-block; direction: ltr; background: #ffd21f; color: #111; border: 2px solid #161616; border-radius: 7px; padding: 3px 12px; font-size: 24px; font-weight: 800; letter-spacing: 2px; font-variant-numeric: tabular-nums; }
+.plate-chip.sm { font-size: 17px; padding: 1px 9px; border-width: 1.5px; letter-spacing: 1.5px; }
