@@ -67,7 +67,7 @@ const cleanPhone = v => {
   let d = v.replace(/[\s\-()]/g, '');
   if (d.startsWith('+972')) d = '0' + d.slice(4);
   else if (d.startsWith('972')) d = '0' + d.slice(3);
-  return /^0\d{8,9}$/.test(d) ? d : null;
+  return /^(05\d{8}|07\d{8}|0[23489]\d{7})$/.test(d) ? d : null;
 };
 const cleanHost = v => { v = v.replace(/\s+/g, ' ').trim(); return v.length >= 2 && v.length <= 80 ? v : null; };
 
@@ -84,7 +84,7 @@ $('#phone').addEventListener('input', e => {
 
 const rules = {
   plate: [cleanPlate, v => !digits(v) ? 'נא למלא מספר רכב' : 'מספר רכב חייב להכיל 7 או 8 ספרות'],
-  phone: [cleanPhone, v => !v.trim() ? 'נא למלא מספר טלפון' : 'מספר טלפון לא תקין'],
+  phone: [cleanPhone, v => !v.trim() ? 'נא למלא מספר טלפון' : 'מספר טלפון חייב להכיל 10 ספרות (נייד) או 9 ספרות (קווי)'],
   host:  [cleanHost,  v => 'נא לציין למי אתם מגיעים'],
 };
 function check(k, showOk = true) {

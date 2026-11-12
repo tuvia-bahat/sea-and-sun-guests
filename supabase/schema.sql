@@ -10,7 +10,7 @@ create table if not exists public.seasun_visitors (
   id          bigint generated always as identity primary key,
   token       uuid not null unique,
   plate       text not null check (plate ~ '^[0-9]{7,8}$'),
-  phone       text not null check (phone ~ '^0[0-9]{8,9}$'),
+  phone       text not null check (phone ~ '^(05[0-9]{8}|07[0-9]{8}|0[23489][0-9]{7})$'),
   host        text not null check (char_length(host) between 2 and 80),
   status      text not null default 'pending' check (status in ('pending','entered','rejected')),
   created_at  timestamptz not null default now(),
