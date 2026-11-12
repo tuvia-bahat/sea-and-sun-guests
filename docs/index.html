@@ -7,8 +7,8 @@
 <title>רישום אורח - סי אנד סאן</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700;800&family=Frank+Ruhl+Libre:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=6">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 <header class="hero">
@@ -38,13 +38,13 @@
 
     <div class="field">
       <label for="phone">מספר טלפון<span class="req">*</span></label>
-      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="12" placeholder="050-123-4567" class="ltr" required aria-required="true">
+      <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="12" placeholder="050-123-4567" class="ltr" required aria-required="true">
       <div class="err" data-for="phone"></div>
     </div>
 
     <div class="field">
       <label for="host">למי אתם מגיעים?<span class="req">*</span></label>
-      <input id="host" type="text" autocomplete="off" maxlength="80" placeholder="שם הדייר או מספר דירה" required aria-required="true">
+      <input id="host" name="host" type="text" autocomplete="off" maxlength="80" placeholder="שם הדייר או מספר דירה" required aria-required="true">
       <div class="err" data-for="host"></div>
     </div>
 
@@ -124,14 +124,20 @@ form.addEventListener('submit', async e => {
     return;
   }
   form.hidden = true; $('#done').hidden = false;
-  try { localStorage.setItem('last', JSON.stringify({ plate: $('#plate').value, phone: $('#phone').value })); } catch {}
+  saveDraft();
   poll(token);
 });
 
+// ---- שמירה אוטומטית של הפרטים לפעם הבאה ----
+const KEY = 'seasun-guest';
+function saveDraft() {
+  try { localStorage.setItem(KEY, JSON.stringify({ plate: $('#plate').value, phone: $('#phone').value, host: $('#host').value })); } catch {}
+}
 try {
-  const last = JSON.parse(localStorage.getItem('last') || 'null');
-  if (last) { $('#plate').value = last.plate; $('#phone').value = last.phone; }
+  const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
+  if (saved) for (const k of ['plate', 'phone', 'host']) if (saved[k]) $('#' + k).value = saved[k];
 } catch {}
+for (const k of ['plate', 'phone', 'host']) $('#' + k).addEventListener('input', saveDraft);
 
 function poll(token) {
   const t = setInterval(async () => {

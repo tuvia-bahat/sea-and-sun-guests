@@ -7,8 +7,8 @@
   --ok: #138a55; --bad: #c9382f; --warn: #b87708;
   --hero: #0d4a6b; --tower: #082f45; --tower-2: #0b3c58; --sea-line: #2d7da0;
   --shadow: 0 1px 2px rgba(8, 47, 69, .06), 0 12px 32px rgba(8, 47, 69, .10);
-  --display: "Frank Ruhl Libre", "David Libre", Georgia, serif;
-  --body: "Assistant", "Heebo", "Segoe UI", Arial, sans-serif;
+  --display: "Heebo", "Segoe UI", Arial, sans-serif;
+  --body: "Heebo", "Segoe UI", Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -28,8 +28,8 @@ body { margin: 0; font-family: var(--body); color: var(--text); background: var(
 .hero { position: relative; margin-inline: calc(50% - 50vw); background: var(--hero); color: #fff; padding: 30px 20px 0; text-align: center; overflow: hidden; }
 .hero-text { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; }
 .eyebrow { margin: 0 0 6px; font-size: 13px; font-weight: 700; letter-spacing: .14em; color: #f7c948; }
-.hero h1 { margin: 0; font-family: var(--display); font-weight: 800; font-size: 38px; line-height: 1.1; text-wrap: balance; }
-.hero p.sub { margin: 10px auto 0; max-width: 30ch; font-size: 17px; opacity: .88; text-wrap: balance; }
+.hero h1 { margin: 0; font-family: var(--display); font-weight: 700; font-size: 34px; line-height: 1.15; letter-spacing: -.01em; text-wrap: balance; }
+.hero p.sub { margin: 10px auto 0; max-width: 30ch; font-size: 17px; font-weight: 300; opacity: .92; text-wrap: balance; }
 .skyline { display: block; width: 100%; max-width: 480px; margin: 6px auto 0; height: auto; position: relative; z-index: 0; }
 .skyline .sea { fill: var(--bg); }
 .hero-edge { height: 40px; background: var(--bg); margin-top: -1px; }
@@ -38,7 +38,7 @@ body { margin: 0; font-family: var(--body); color: var(--text); background: var(
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 22px 20px; margin-top: 16px; box-shadow: var(--shadow); }
 .card.lift { margin-top: 14px; position: relative; z-index: 2; }
 .field { margin-bottom: 14px; }
-label { display: block; font-weight: 700; margin: 0 0 6px; font-size: 16px; }
+label { display: block; font-weight: 600; margin: 0 0 6px; font-size: 16px; }
 label .req { color: var(--bad); margin-inline-start: 3px; }
 label .hint { font-weight: 400; color: var(--muted); font-size: 14px; margin-inline-start: 8px; }
 
@@ -82,7 +82,7 @@ button.ghost:hover, .btn.ghost:hover { background: var(--primary-soft); color: v
 .status-dot.entered { background: var(--ok); } .status-dot.rejected { background: var(--bad); }
 @keyframes pulse { 50% { transform: scale(1.07); box-shadow: 0 0 0 14px color-mix(in srgb, var(--sun) 25%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .status-dot.pending { animation: none; } }
-.done-title { font-family: var(--display); font-size: 28px; font-weight: 800; margin: 0 0 6px; }
+.done-title { font-family: var(--display); font-size: 26px; font-weight: 700; margin: 0 0 6px; }
 .done-msg { margin: 0; color: var(--muted); }
 .state-pending { color: var(--warn); } .state-entered { color: var(--ok); } .state-rejected { color: var(--bad); }
 
