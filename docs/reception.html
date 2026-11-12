@@ -3,52 +3,116 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d4a6b">
 <title>מסך קבלה - סי אנד סאן</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 <style>
-  .wide { max-width: 1000px; }
-  #app > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 22px 0 6px; }
-  #app > header h1 { margin: 0; font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--text); }
-  #app > header nav { display: flex; gap: 8px; align-items: center; }
-  #app > header nav a, #app > header nav button { height: 40px; padding: 0 14px; font-size: 15px; }
-  h2 { font-size: 20px; font-weight: 800; margin: 28px 0 10px; display: flex; align-items: center; gap: 10px; }
-  .count { background: var(--sun); color: #3a2a00; border-radius: 999px; padding: 1px 11px; font-size: 14px; font-weight: 800; }
-  .row { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
-         display: grid; grid-template-columns: 1.2fr 1.2fr 1.6fr auto; gap: 12px; align-items: center; }
-  .row.new { border-color: var(--sun); box-shadow: 0 0 0 3px color-mix(in srgb, var(--sun) 35%, transparent); animation: flash 1.2s ease-out; }
-  @keyframes flash { from { background: color-mix(in srgb, var(--primary) 25%, var(--card)); } }
+  /* ---------- סרגל עליון ---------- */
+  .topbar { background: var(--hero); color: #fff; padding-block: 16px 18px; }
+  .topbar-in { max-width: 1120px; margin: 0 auto; padding-inline: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; }
+  .topbar-in + .topbar-in { margin-top: 14px; }
+  .brandrow { display: flex; align-items: center; gap: 12px; }
+  .mark { width: 44px; height: 44px; flex: none; }
+  .brandrow h1 { margin: 0; font-size: 24px; font-weight: 700; line-height: 1.15; }
+  .brandrow p { margin: 2px 0 0; font-size: 14px; font-weight: 300; opacity: .85; }
+  .live { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; background: rgba(255,255,255,.12); padding: 4px 12px; border-radius: 999px; margin-inline-start: 6px; }
+  .live i { width: 9px; height: 9px; border-radius: 50%; background: #3ddc97; animation: ping 2.2s infinite; }
+  .live.off i { background: #ff6b5e; animation: none; }
+  @keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(61,220,151,.55); } 70%, 100% { box-shadow: 0 0 0 8px rgba(61,220,151,0); } }
+  .topbar nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .topbar nav button, .topbar nav a { height: 40px; padding: 0 14px; font-size: 15px; font-weight: 500; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.22); border-radius: 10px; }
+  .topbar nav button:hover, .topbar nav a:hover { background: rgba(255,255,255,.22); color: #fff; }
+  #search { flex: 1; min-width: 0; height: 52px; padding: 0 18px; font-size: 18px; color: #fff; background: rgba(255,255,255,.12); border: 1.5px solid rgba(255,255,255,.28); border-radius: 14px; }
+  #search::placeholder { color: rgba(255,255,255,.68); }
+  #search:focus { background: #fff; color: #0e2a3a; border-color: var(--sun); box-shadow: 0 0 0 4px rgba(242,169,0,.3); }
+  #search:focus::placeholder { color: #6d8594; }
+
+  main { max-width: 1120px; margin: 0 auto; padding: 4px 16px 64px; }
+  .tabs { display: inline-flex; gap: 4px; margin-top: 20px; padding: 4px; background: var(--primary-soft); border-radius: 12px; }
+  .tabs button { height: 40px; padding: 0 22px; font-size: 16px; font-weight: 600; color: var(--muted); background: transparent; border-radius: 9px; }
+  .tabs button:hover { background: transparent; color: var(--text); }
+  .tabs button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(8,47,69,.14); }
+
+  /* ---------- מדדים ---------- */
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 18px 0 6px; }
+  .tile { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 14px 18px 12px; box-shadow: var(--shadow); }
+  .tile b { display: block; font-size: 40px; line-height: 1.05; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .tile span { color: var(--muted); font-size: 15px; }
+  .tile.wait.on { background: #ffd21f; border-color: #161616; color: #111; }
+  .tile.wait.on span { color: #4a3a00; }
+
+  .cols { display: grid; grid-template-columns: 1fr; gap: 0 28px; }
+  @media (min-width: 980px) { .cols { grid-template-columns: 1.3fr 1fr; align-items: start; } }
+  h2 { font-size: 20px; font-weight: 800; margin: 26px 0 12px; }
+
+  /* ---------- כרטיסי המתנה ---------- */
+  .q-card { display: grid; gap: 16px; padding: 18px 20px; margin-bottom: 14px; background: var(--card); border: 1px solid var(--border); border-inline-start: 6px solid var(--sun); border-radius: 16px; box-shadow: var(--shadow); cursor: pointer; }
+  .q-card.new { animation: flash 1.4s ease-out; }
+  @keyframes flash { from { background: color-mix(in srgb, var(--sun) 32%, var(--card)); } }
+  .q-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .plate-chip.lg { font-size: 34px; padding: 4px 18px; letter-spacing: 3px; border-radius: 9px; }
+  .wait { font-size: 14px; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: var(--primary-soft); color: var(--muted); }
+  .wait.warn { background: #fff0cc; color: #8a5a00; }
+  .wait.late { background: #fde1de; color: #b3261e; }
+  .q-info { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .lbl { display: block; color: var(--muted); font-size: 14px; margin-bottom: 2px; }
+  .q-info strong { font-size: 21px; font-weight: 700; }
+  .q-info a { color: var(--text); font-size: 21px; font-weight: 500; text-decoration: none; }
+  .ph { direction: ltr; unicode-bidi: embed; display: inline-block; font-variant-numeric: tabular-nums; }
+  .q-actions { display: flex; gap: 10px; }
+  .q-actions button { height: 56px; font-size: 19px; font-weight: 700; }
+  .q-actions .enter { flex: 2; background: var(--ok); color: #fff; }
+  .q-actions .enter:hover { background: #0f7347; }
+  .q-actions .reject { flex: 1; background: transparent; color: var(--bad); border: 2px solid color-mix(in srgb, var(--bad) 55%, transparent); }
+  .q-actions .reject:hover { background: color-mix(in srgb, var(--bad) 10%, transparent); }
+
+  .empty { text-align: center; padding: 34px 20px; color: var(--muted); background: var(--card); border: 1.5px dashed var(--border); border-radius: 16px; }
+  .empty b { display: block; color: var(--text); font-size: 18px; margin-bottom: 4px; }
+
+  /* ---------- יומן ---------- */
+  .log { background: var(--card); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+  .log .empty { border: 0; border-radius: 0; background: transparent; }
+  .log-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
+  .log-row:last-child { border-bottom: 0; }
+  .log-row:hover { background: var(--primary-soft); }
+  .log-row .grow { flex: 1 1 130px; min-width: 0; }
+  .log-row .grow b { display: block; font-weight: 600; overflow-wrap: anywhere; }
   .small { color: var(--muted); font-size: 14px; }
-  .actions { display: flex; gap: 8px; }
-  .actions button { height: 48px; padding: 0 22px; font-size: 17px; }
-  .empty { color: var(--muted); padding: 24px; text-align: center; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
-  .badge { font-weight: 700; white-space: nowrap; }
-  .count.muted { background: var(--muted); color: #fff; }
-  .row[data-plate] { cursor: pointer; transition: border-color .15s; }
-  .row[data-plate]:hover { border-color: var(--primary); }
-  .tabs { display: flex; gap: 4px; margin-top: 18px; border-bottom: 1.5px solid var(--border); }
-  .tabs button { background: transparent; color: var(--muted); height: 46px; padding: 0 18px; border-radius: 0; border-bottom: 3px solid transparent; margin-bottom: -1.5px; font-size: 17px; font-weight: 600; }
-  .tabs button:hover { background: var(--primary-soft); color: var(--text); }
-  .tabs button.on { color: var(--text); border-bottom-color: var(--sun); }
-  dialog { width: min(560px, calc(100% - 32px)); max-height: 86vh; padding: 20px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); color: var(--text); font-family: inherit; }
-  dialog::backdrop { background: rgba(8, 30, 45, .55); }
-  .dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-  .dlg-head button { height: 40px; font-size: 15px; padding: 0 14px; }
-  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .when { white-space: nowrap; }
+  .pill { display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap; }
+  .pill.entered { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
+  .pill.rejected { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+  .pill.pending { background: color-mix(in srgb, var(--sun) 28%, transparent); color: var(--warn); }
+  button.link { height: auto; padding: 4px 8px; background: none; color: var(--muted); font-size: 14px; font-weight: 500; text-decoration: underline; }
+  button.link:hover { background: none; color: var(--text); }
+
+  /* ---------- חלון רכב ---------- */
+  dialog { width: min(560px, calc(100% - 32px)); max-height: 88vh; padding: 22px; border: 1px solid var(--border); border-radius: 18px; background: var(--card); color: var(--text); font-family: inherit; box-shadow: 0 24px 60px rgba(0,0,0,.35); }
+  dialog::backdrop { background: rgba(8, 30, 45, .6); }
+  .dlg-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .dlg-head button { height: 40px; font-size: 15px; padding: 0 16px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
   .stats div { background: var(--primary-soft); border-radius: 12px; padding: 10px; text-align: center; }
-  .stats b { display: block; font-size: 26px; font-weight: 800; }
+  .stats b { display: block; font-size: 28px; font-weight: 800; line-height: 1.1; }
   .stats span { color: var(--muted); font-size: 14px; }
-  .visits { display: flex; flex-direction: column; max-height: 46vh; overflow-y: auto; border-top: 1px solid var(--border); }
-  .visit { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 10px 2px; border-bottom: 1px solid var(--border); }
-  #search { margin: 10px 0 0; }
-  #conn { font-size: 13px; color: var(--bad); }
-  @media (max-width: 700px) { .row { grid-template-columns: 1fr 1fr; } .actions { grid-column: 1 / -1; } .actions button { flex: 1; } }
+  .visits { display: flex; flex-direction: column; max-height: 44vh; overflow-y: auto; border-top: 1px solid var(--border); margin-top: 10px; }
+  .visit { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: center; padding: 11px 2px; border-bottom: 1px solid var(--border); }
+
+  @media (max-width: 640px) {
+    .stats-row { gap: 8px; } .tile { padding: 12px; } .tile b { font-size: 32px; }
+    .q-info { grid-template-columns: 1fr; } .plate-chip.lg { font-size: 30px; }
+    .brandrow h1 { font-size: 21px; }
+  }
 </style>
 </head>
 <body>
+
 <div class="wrap" id="login" hidden>
   <header class="hero"><div class="hero-text"><h1>מגדלי סי אנד סאן</h1><p class="sub">כניסת פקידי קבלה</p></div>
-  <svg class="skyline" viewBox="0 0 480 150" aria-hidden="true">
+    <svg class="skyline" viewBox="0 0 480 150" aria-hidden="true">
       <circle cx="372" cy="78" r="40" fill="#f2a900"/>
       <g fill="var(--tower)"><rect x="150" y="22" width="52" height="128" rx="2"/><rect x="208" y="58" width="44" height="92" rx="2"/><rect x="258" y="86" width="30" height="64" rx="2"/></g>
       <g fill="var(--tower-2)"><rect x="150" y="22" width="12" height="128"/><rect x="208" y="58" width="10" height="92"/></g>
@@ -56,7 +120,7 @@
       <path class="sea" d="M0,128 C60,118 120,138 190,128 C260,118 320,138 390,128 C430,122 460,128 480,126 L480,150 L0,150 Z"/>
       <path d="M0,128 C60,118 120,138 190,128 C260,118 320,138 390,128 C430,122 460,128 480,126" fill="none" stroke="var(--sea-line)" stroke-width="2"/>
     </svg>
-</header>
+  </header>
   <form class="card lift" id="loginForm">
     <div class="field"><label for="password">סיסמה</label>
     <input id="password" type="password" autocomplete="off">
@@ -64,40 +128,60 @@
     <button class="full" type="submit">כניסה</button>
   </form>
 </div>
-<div class="wrap wide" id="app" hidden>
-  <header>
-    <h1>מסך הקבלה</h1>
-    <nav>
-      <span id="conn"></span>
-      <button class="ghost" id="sound">צליל: פעיל</button>
-      <a class="btn ghost" href="qr.html">ברקוד להדפסה</a>
-      <button class="ghost" id="logout">יציאה</button>
-    </nav>
+
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="topbar-in">
+      <div class="brandrow">
+        <svg class="mark" viewBox="0 0 44 44" aria-hidden="true">
+          <circle cx="33" cy="12" r="7" fill="#f2a900"/>
+          <rect x="7" y="10" width="12" height="30" rx="1.5" fill="#fff"/>
+          <rect x="21" y="21" width="10" height="19" rx="1.5" fill="#fff" opacity=".75"/>
+          <g fill="#0d4a6b"><rect x="10" y="15" width="2.5" height="3"/><rect x="14" y="15" width="2.5" height="3"/><rect x="10" y="22" width="2.5" height="3"/><rect x="14" y="22" width="2.5" height="3"/><rect x="10" y="29" width="2.5" height="3"/><rect x="14" y="29" width="2.5" height="3"/></g>
+        </svg>
+        <div><h1>מסך הקבלה</h1><p>מגדלי סי אנד סאן</p></div>
+        <span class="live" id="live"><i></i><span id="liveTxt">מחובר</span></span>
+      </div>
+      <nav>
+        <button id="sound">צליל: פעיל</button>
+        <a class="btn" href="qr.html">ברקוד להדפסה</a>
+        <button id="logout">יציאה</button>
+      </nav>
+    </div>
+    <div class="topbar-in">
+      <input id="search" type="search" placeholder="חיפוש לפי מספר רכב, טלפון או דייר בכל ההיסטוריה" autocomplete="off">
+    </div>
   </header>
 
-  <input id="search" type="search" placeholder="חיפוש מספר רכב, טלפון או דייר בכל ההיסטוריה">
+  <main>
+    <div class="tabs" id="tabs">
+      <button class="on" data-tab="today">היום</button>
+      <button data-tab="history">כל ההיסטוריה</button>
+    </div>
 
-  <div class="tabs" id="tabs">
-    <button class="on" data-tab="today">היום</button>
-    <button data-tab="history">כל ההיסטוריה</button>
-  </div>
+    <section id="todayView">
+      <div class="stats-row">
+        <div class="tile wait" id="tWaitBox"><b id="tWait">0</b><span>ממתינים בשער</span></div>
+        <div class="tile"><b id="tIn">0</b><span>נכנסו היום</span></div>
+        <div class="tile"><b id="tOut">0</b><span>נדחו היום</span></div>
+      </div>
+      <div class="cols">
+        <div><h2>ממתינים בשער</h2><div id="pending"></div></div>
+        <div><h2>טופלו היום</h2><div class="log" id="done"></div></div>
+      </div>
+    </section>
 
-  <section id="todayView">
-    <h2>ממתינים בשער <span class="count" id="pcount">0</span></h2>
-    <div id="pending"></div>
-    <h2>טופלו היום <span class="count muted" id="dcount">0</span></h2>
-    <div id="done"></div>
-  </section>
+    <section id="historyView" hidden>
+      <h2>כל האורחים</h2>
+      <div class="log" id="history"></div>
+      <p class="center"><button class="ghost" id="more" hidden>טעינת רשומות נוספות</button></p>
+    </section>
 
-  <section id="historyView" hidden>
-    <div id="history"></div>
-    <p class="center"><button class="ghost" id="more" hidden>טעינת רשומות נוספות</button></p>
-  </section>
-
-  <section id="searchView" hidden>
-    <h2>תוצאות חיפוש <span class="count" id="scount">0</span></h2>
-    <div id="results"></div>
-  </section>
+    <section id="searchView" hidden>
+      <h2>תוצאות חיפוש <span class="small" id="scount"></span></h2>
+      <div class="log" id="results"></div>
+    </section>
+  </main>
 </div>
 
 <dialog id="plateDlg">
@@ -106,7 +190,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js?v=8"></script>
+<script src="config.js?v=9"></script>
 <script>
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -119,9 +203,10 @@ const time = iso => iso ? new Date(iso).toLocaleTimeString('he-IL', {hour: '2-di
 const fmtDate = iso => new Date(iso).toLocaleDateString('he-IL', {day: 'numeric', month: 'numeric', year: '2-digit'});
 const fmtDT = iso => iso ? `${fmtDate(iso)} ${time(iso)}` : '';
 const STATUS = {pending: 'ממתין', entered: 'נכנס', rejected: 'נדחה'};
-const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 1 ? 'עכשיו' : `לפני ${m} דק׳`; };
+const waitMins = iso => Math.max(0, Math.floor((Date.now() - new Date(iso)) / 60000));
+const isToday = iso => new Date(iso).toDateString() === new Date().toDateString();
 
-// צליל: דפדפנים מאפשרים שמע רק אחרי לחיצה בדף, לכן משתמשים בהקשר שמע אחד ומפעילים אותו בכל לחיצה
+// ---------- צליל: הקשר שמע אחד שמופעל בכל לחיצה ----------
 let actx = null;
 function audio() {
   try {
@@ -151,24 +236,44 @@ function beep() {
 $('#sound').onclick = () => { soundOn = !soundOn; audio(); if (soundOn) setTimeout(beep, 100); setTimeout(updateSoundBtn, 200); updateSoundBtn(); };
 updateSoundBtn();
 
+// ---------- תבניות ----------
+const logRow = (v, extra = '') => `
+  <div class="log-row" data-plate="${esc(v.plate)}">
+    <span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span>
+    <div class="grow"><b>${esc(v.host)}</b><span class="small ph">${esc(fmtPhone(v.phone))}</span></div>
+    <span class="small when">${esc(extra)}</span>
+    <span class="pill ${v.status}">${STATUS[v.status]}${v.status !== 'pending' && v.handled_at ? ' ' + esc(time(v.handled_at)) : ''}</span>
+    ${v.status !== 'pending' && v.handled_at && isToday(v.handled_at) ? `<button class="link" onclick="act(${v.id},'undo')">ביטול</button>` : ''}
+  </div>`;
+
 function render(newIds = new Set()) {
   const p = data.pending, d = data.done;
-  $('#pcount').textContent = data.pending.length; $('#dcount').textContent = data.done.length;
-  $('#pending').innerHTML = p.length ? p.map(v => `
-    <div class="row ${newIds.has(v.id) ? 'new' : ''}" data-plate="${esc(v.plate)}">
-      <div><span class="plate-chip">${esc(fmtPlate(v.plate))}</span><div class="small">${esc(ago(v.created_at))}, ${esc(time(v.created_at))}</div></div>
-      <div><div class="small">טלפון</div><a class="ltr" href="tel:${esc(v.phone)}" style="color:inherit;direction:ltr;display:inline-block">${esc(fmtPhone(v.phone))}</a></div>
-      <div><div class="small">מגיע אל</div><b>${esc(v.host)}</b></div>
-      <div class="actions"><button class="ok" onclick="act(${v.id},'enter')">הכנס ✔</button><button class="bad" onclick="act(${v.id},'reject')">דחה</button></div>
-    </div>`).join('') : '<div class="empty">אין אורחים ממתינים</div>';
-  $('#done').innerHTML = d.length ? d.map(v => `
-    <div class="row" style="opacity:.85" data-plate="${esc(v.plate)}">
-      <div><span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span><div class="small">נרשם ${esc(time(v.created_at))}</div></div>
-      <div class="ltr small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
-      <div>${esc(v.host)}</div>
-      <div class="actions"><span class="badge state-${v.status}">${v.status === 'entered' ? 'נכנס' : 'נדחה'} ${esc(time(v.handled_at))}</span>
-        <button class="ghost" style="padding:6px 10px;font-size:14px" onclick="act(${v.id},'undo')">בטל</button></div>
-    </div>`).join('') : '<div class="empty">עדיין לא טופלו אורחים היום</div>';
+  $('#tWait').textContent = p.length;
+  $('#tIn').textContent = d.filter(v => v.status === 'entered').length;
+  $('#tOut').textContent = d.filter(v => v.status === 'rejected').length;
+  $('#tWaitBox').classList.toggle('on', p.length > 0);
+
+  $('#pending').innerHTML = p.length ? p.map(v => {
+    const m = waitMins(v.created_at);
+    return `
+    <article class="q-card ${newIds.has(v.id) ? 'new' : ''}" data-plate="${esc(v.plate)}">
+      <div class="q-top">
+        <span class="plate-chip lg">${esc(fmtPlate(v.plate))}</span>
+        <span class="wait ${m >= 10 ? 'late' : m >= 5 ? 'warn' : ''}">${m < 1 ? 'הגיע הרגע' : `ממתין ${m} דק׳`}</span>
+      </div>
+      <div class="q-info">
+        <div><span class="lbl">מגיע אל</span><strong>${esc(v.host)}</strong></div>
+        <div><span class="lbl">טלפון</span><a class="ph" href="tel:${esc(v.phone)}">${esc(fmtPhone(v.phone))}</a></div>
+      </div>
+      <div class="q-actions">
+        <button class="enter" onclick="act(${v.id},'enter')">הכנס</button>
+        <button class="reject" onclick="act(${v.id},'reject')">דחה</button>
+      </div>
+    </article>`;
+  }).join('') : '<div class="empty"><b>אין אורחים בשער</b>רישומים חדשים יופיעו כאן אוטומטית</div>';
+
+  $('#done').innerHTML = d.length ? d.map(v => logRow(v, 'נרשם ' + time(v.created_at))).join('')
+    : '<div class="empty"><b>עדיין לא טופלו אורחים</b>הרשימה מתמלאת במהלך היום</div>';
 }
 
 const getPw = () => { try { return sessionStorage.getItem('pw') || ''; } catch { return ''; } };
@@ -181,13 +286,18 @@ async function act(id, action) {
   if (tab !== 'today' || $('#search').value.trim()) refreshView();
 }
 
+function setLive(ok) {
+  $('#live').classList.toggle('off', !ok);
+  $('#liveTxt').textContent = ok ? 'מחובר' : 'אין חיבור לשרת';
+}
+
 async function load() {
   const {data: rows, error} = await sb.rpc('seasun_list', {pw: getPw()});
   if (error) {
     if (/unauthorized/.test(error.message)) return show(false);
-    $('#conn').textContent = '⚠ אין חיבור לשרת'; return;
+    return setLive(false);
   }
-  $('#conn').textContent = '';
+  setLive(true);
   data = {
     pending: rows.filter(v => v.status === 'pending'),
     done: rows.filter(v => v.status !== 'pending').sort((x, y) => new Date(y.handled_at) - new Date(x.handled_at))
@@ -208,27 +318,19 @@ function show(loggedIn) {
 $('#loginForm').addEventListener('submit', async e => {
   e.preventDefault();
   const pw = $('#password').value;
-  const {data: rows, error} = await sb.rpc('seasun_list', {pw});
+  const {error} = await sb.rpc('seasun_list', {pw});
   if (error) { $('#loginErr').textContent = /unauthorized/.test(error.message) ? 'סיסמה שגויה' : 'שגיאת תקשורת'; return; }
   try { sessionStorage.setItem('pw', pw); } catch {}
   $('#password').value = '';
   show(true);
 });
 $('#logout').onclick = () => { try { sessionStorage.removeItem('pw'); } catch {} show(false); };
-show(!!getPw());
 
 // ---------- היסטוריה וחיפוש ----------
 let tab = 'today', searchSeq = 0, hist = {rows: [], loading: false};
-const histRow = v => `
-  <div class="row" data-plate="${esc(v.plate)}">
-    <div><span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span><div class="small">${esc(fmtDT(v.created_at))}</div></div>
-    <div class="ltr small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
-    <div>${esc(v.host)}</div>
-    <div><span class="badge state-${v.status}">${STATUS[v.status]}</span></div>
-  </div>`;
 
 function handleErr(error) {
-  if (/unauthorized/.test(error.message)) show(false); else $('#conn').textContent = '⚠ אין חיבור לשרת';
+  if (/unauthorized/.test(error.message)) show(false); else setLive(false);
 }
 
 function setTab(t) {
@@ -253,7 +355,8 @@ async function loadHistory(reset) {
   hist.loading = false;
   if (error) return handleErr(error);
   hist.rows = reset ? rows : hist.rows.concat(rows);
-  $('#history').innerHTML = hist.rows.length ? hist.rows.map(histRow).join('') : '<div class="empty">עדיין אין היסטוריה</div>';
+  $('#history').innerHTML = hist.rows.length ? hist.rows.map(v => logRow(v, fmtDT(v.created_at))).join('')
+    : '<div class="empty"><b>עדיין אין היסטוריה</b>אורחים שנרשמו יופיעו כאן</div>';
   $('#more').hidden = rows.length < 50;
 }
 
@@ -262,12 +365,13 @@ async function runSearch(q) {
   const {data: rows, error} = await sb.rpc('seasun_history', {pw: getPw(), q, lim: 100, off: 0});
   if (seq !== searchSeq) return;
   if (error) return handleErr(error);
-  $('#scount').textContent = rows.length;
-  $('#results').innerHTML = rows.length ? rows.map(histRow).join('') : '<div class="empty">לא נמצאו תוצאות</div>';
+  $('#scount').textContent = `(${rows.length})`;
+  $('#results').innerHTML = rows.length ? rows.map(v => logRow(v, fmtDT(v.created_at))).join('')
+    : '<div class="empty"><b>לא נמצאו תוצאות</b>נסו מספר רכב אחר, טלפון או שם דייר</div>';
 }
 
 async function openPlate(plate) {
-  $('#plateTitle').innerHTML = `<span class="plate-chip">${esc(fmtPlate(plate))}</span>`;
+  $('#plateTitle').innerHTML = `<span class="plate-chip lg">${esc(fmtPlate(plate))}</span>`;
   $('#plateBody').innerHTML = '<div class="empty">טוען…</div>';
   $('#plateDlg').showModal();
   const {data: rows, error} = await sb.rpc('seasun_plate_history', {pw: getPw(), p: plate});
@@ -276,18 +380,18 @@ async function openPlate(plate) {
   const hosts = [...new Set(rows.map(v => v.host))];
   $('#plateBody').innerHTML = `
     <div class="stats"><div><b>${rows.length}</b><span>רישומים</span></div><div><b>${n('entered')}</b><span>נכנסו</span></div><div><b>${n('rejected')}</b><span>נדחו</span></div></div>
-    <p class="small">ביקורים אצל: ${hosts.map(esc).join(', ')}. הרישום הראשון: ${esc(fmtDate(rows[rows.length - 1].created_at))}.</p>
+    <p class="small" style="margin:0">ביקורים אצל: ${hosts.map(esc).join(', ')}. הרישום הראשון: ${esc(fmtDate(rows[rows.length - 1].created_at))}.</p>
     <div class="visits">${rows.map(v => `
       <div class="visit">
         <div><b>${esc(fmtDT(v.created_at))}</b><div class="small">${esc(v.host)}</div></div>
-        <div class="small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
-        <span class="badge state-${v.status}">${STATUS[v.status]}${v.status !== 'pending' && v.handled_at ? ' ' + esc(time(v.handled_at)) : ''}</span>
+        <div class="small ph">${esc(fmtPhone(v.phone))}</div>
+        <span class="pill ${v.status}">${STATUS[v.status]}${v.status !== 'pending' && v.handled_at ? ' ' + esc(time(v.handled_at)) : ''}</span>
       </div>`).join('')}</div>`;
 }
 
 document.addEventListener('click', e => {
-  const row = e.target.closest('.row[data-plate]');
-  if (row && !e.target.closest('.actions, a')) openPlate(row.dataset.plate);
+  const el = e.target.closest('[data-plate]');
+  if (el && !e.target.closest('.q-actions, a, button')) openPlate(el.dataset.plate);
   if (e.target === $('#plateDlg')) $('#plateDlg').close();
 });
 $('#plateClose').onclick = () => $('#plateDlg').close();
@@ -295,6 +399,8 @@ $('#more').onclick = () => loadHistory(false);
 document.querySelectorAll('#tabs button').forEach(b => b.onclick = () => setTab(b.dataset.tab));
 let searchTimer;
 $('#search').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(refreshView, 300); });
+
+show(!!getPw());
 </script>
 </body>
 </html>
