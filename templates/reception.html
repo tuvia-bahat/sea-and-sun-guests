@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>מסך קבלה - סי אנד סאן</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>
+  .wide { max-width: 1000px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 6px 0 10px; }
+  header h1 { margin: 0; font-size: 22px; color: var(--primary); }
+  header nav { display: flex; gap: 8px; align-items: center; }
+  header nav a, header nav button { padding: 8px 12px; font-size: 15px; }
+  h2 { font-size: 18px; margin: 22px 0 8px; display: flex; align-items: center; gap: 8px; }
+  .count { background: var(--primary); color: #fff; border-radius: 999px; padding: 1px 10px; font-size: 14px; }
+  .row { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px;
+         display: grid; grid-template-columns: 1.2fr 1.2fr 1.6fr auto; gap: 12px; align-items: center; }
+  .row.new { border: 2px solid var(--primary); animation: flash 1.2s ease-out; }
+  @keyframes flash { from { background: color-mix(in srgb, var(--primary) 25%, var(--card)); } }
+  .plate { font-size: 24px; font-weight: 700; letter-spacing: 1px; direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+  .small { color: var(--muted); font-size: 14px; }
+  .actions { display: flex; gap: 8px; }
+  .actions button { padding: 12px 20px; }
+  .empty { color: var(--muted); padding: 24px; text-align: center; background: var(--card); border: 1px dashed var(--border); border-radius: 12px; }
+  .badge { font-weight: 700; }
+  #search { margin: 10px 0 0; }
+  #conn { font-size: 13px; color: var(--bad); }
+  @media (max-width: 700px) { .row { grid-template-columns: 1fr 1fr; } .actions { grid-column: 1 / -1; } .actions button { flex: 1; } }
+</style>
+</head>
+<body>
+<div class="wrap wide">
+  <header>
+    <h1>מסך קבלה · מחסום</h1>
+    <nav>
+      <span id="conn"></span>
+      <button class="ghost" id="sound">🔔 צליל: פעיל</button>
+      <a class="btn ghost" href="/reception/qr">ברקוד להדפסה</a>
+      <a class="btn ghost" href="/reception/logout">יציאה</a>
+    </nav>
+  </header>
+
+  <input id="search" type="search" placeholder="חיפוש לפי מספר רכב, טלפון או דייר...">
+
+  <h2>ממתינים בשער <span class="count" id="pcount">0</span></h2>
+  <div id="pending"></div>
+
+  <h2>טופלו היום <span class="count" id="dcount" style="background:var(--muted)">0</span></h2>
+  <div id="done"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let seen = null, soundOn = true, data = {pending: [], done: []};
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtPlate = p => p.length === 8 ? `${p.slice(0,3)}-${p.slice(3,5)}-${p.slice(5)}` : p.length === 7 ? `${p.slice(0,2)}-${p.slice(2,5)}-${p.slice(5)}` : p;
+const fmtPhone = p => p.length === 10 ? `${p.slice(0,3)}-${p.slice(3)}` : p;
+const time = iso => iso ? new Date(iso).toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}) : '';
+const ago = iso => { const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000)); return m < 1 ? 'עכשיו' : `לפני ${m} דק׳`; };
+
+$('#sound').onclick = () => { soundOn = !soundOn; $('#sound').textContent = soundOn ? '🔔 צליל: פעיל' : '🔕 צליל: כבוי'; };
+
+function beep() {
+  if (!soundOn) return;
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination); o.frequency.value = 880; g.gain.value = 0.15;
+    o.start(); o.stop(ctx.currentTime + 0.25);
+  } catch {}
+}
+
+function matches(v, q) {
+  if (!q) return true;
+  const digits = q.replace(/\D/g, '');
+  return v.host.includes(q) || (digits && (v.plate.includes(digits) || v.phone.includes(digits)));
+}
+
+function render(newIds = new Set()) {
+  const q = $('#search').value.trim();
+  const p = data.pending.filter(v => matches(v, q)), d = data.done.filter(v => matches(v, q));
+  $('#pcount').textContent = data.pending.length; $('#dcount').textContent = data.done.length;
+  $('#pending').innerHTML = p.length ? p.map(v => `
+    <div class="row ${newIds.has(v.id) ? 'new' : ''}">
+      <div><div class="plate">${esc(fmtPlate(v.plate))}</div><div class="small">${esc(ago(v.created_at))} · ${esc(time(v.created_at))}</div></div>
+      <div><div class="small">טלפון</div><a class="ltr" href="tel:${esc(v.phone)}" style="color:inherit;direction:ltr;display:inline-block">${esc(fmtPhone(v.phone))}</a></div>
+      <div><div class="small">מגיע אל</div><b>${esc(v.host)}</b></div>
+      <div class="actions"><button class="ok" onclick="act(${v.id},'enter')">הכנס ✔</button><button class="bad" onclick="act(${v.id},'reject')">דחה</button></div>
+    </div>`).join('') : '<div class="empty">אין אורחים ממתינים</div>';
+  $('#done').innerHTML = d.length ? d.map(v => `
+    <div class="row" style="opacity:.85">
+      <div><div class="plate" style="font-size:18px">${esc(fmtPlate(v.plate))}</div><div class="small">נרשם ${esc(time(v.created_at))}</div></div>
+      <div class="ltr small" style="direction:ltr">${esc(fmtPhone(v.phone))}</div>
+      <div>${esc(v.host)}</div>
+      <div class="actions"><span class="badge state-${v.status}">${v.status === 'entered' ? 'נכנס' : 'נדחה'} ${esc(time(v.handled_at))}</span>
+        <button class="ghost" style="padding:6px 10px;font-size:14px" onclick="act(${v.id},'undo')">בטל</button></div>
+    </div>`).join('') : '<div class="empty">עדיין לא טופלו אורחים היום</div>';
+}
+
+async function act(id, action) {
+  await fetch(`/api/visitors/${id}/${action}`, {method: 'POST'});
+  load();
+}
+
+async function load() {
+  try {
+    const r = await fetch('/api/visitors');
+    if (r.status === 401) return location.href = '/reception/login';
+    data = await r.json();
+    $('#conn').textContent = '';
+    const ids = new Set(data.pending.map(v => v.id));
+    const fresh = seen ? new Set([...ids].filter(i => !seen.has(i))) : new Set();
+    if (fresh.size) beep();
+    seen = ids;
+    render(fresh);
+  } catch { $('#conn').textContent = '⚠ אין חיבור לשרת'; }
+}
+
+$('#search').addEventListener('input', () => render());
+load(); setInterval(load, 3000);
+</script>
+</body>
+</html>

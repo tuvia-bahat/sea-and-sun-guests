@@ -1,0 +1,34 @@
+:root {
+  --bg: #f3f7fa; --card: #ffffff; --text: #12263a; --muted: #5b6f82;
+  --primary: #0a6ea8; --primary-dark: #07557f; --ok: #1a8f4c; --bad: #c0392b;
+  --warn: #b7791f; --border: #d5e0e8;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e1a24; --card: #162634; --text: #e8f0f6; --muted: #93a8b9; --border: #2a3f50; --primary: #3aa3dc; --primary-dark: #2a86bb; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 17px; }
+.wrap { max-width: 480px; margin: 0 auto; padding: 20px 16px 40px; }
+.brand { text-align: center; padding: 18px 0 8px; }
+.brand h1 { margin: 0; font-size: 22px; color: var(--primary); }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 15px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-top: 14px; }
+label { display: block; font-weight: 600; margin: 14px 0 6px; }
+input[type=text], input[type=tel], input[type=password], input[type=search], input[type=number] {
+  width: 100%; padding: 14px; font-size: 18px; border: 1.5px solid var(--border); border-radius: 10px;
+  background: var(--bg); color: var(--text); font-family: inherit;
+}
+input:focus { outline: 3px solid color-mix(in srgb, var(--primary) 35%, transparent); border-color: var(--primary); }
+input.invalid { border-color: var(--bad); }
+.err { color: var(--bad); font-size: 14px; min-height: 18px; margin-top: 4px; }
+button, .btn { display: inline-block; border: 0; border-radius: 10px; padding: 14px 18px; font-size: 18px; font-weight: 600;
+  cursor: pointer; background: var(--primary); color: #fff; font-family: inherit; text-decoration: none; text-align: center; }
+button:hover { background: var(--primary-dark); }
+button:disabled { opacity: .6; cursor: wait; }
+button.full { width: 100%; margin-top: 20px; }
+button.ok { background: var(--ok); } button.bad { background: var(--bad); }
+button.ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+.ltr { direction: ltr; text-align: right; }
+.center { text-align: center; }
+.big-icon { font-size: 64px; line-height: 1; }
+.state-pending { color: var(--warn); } .state-entered { color: var(--ok); } .state-rejected { color: var(--bad); }
