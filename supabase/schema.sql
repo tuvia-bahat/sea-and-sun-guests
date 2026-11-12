@@ -1,7 +1,10 @@
 -- מערכת רישום אורחים - סי אנד סאן
 -- מיועד לרוץ בתוך פרויקט Supabase קיים בלי לגעת בשום דבר שכבר קיים:
 -- כל האובייקטים כאן מתחילים ב-seasun_ והסקריפט לא מוחק ולא משנה שום טבלה אחרת.
+-- לא משתמש בהתחברות (Auth) של Supabase בכלל - הקבלה נכנסת עם סיסמה אחת.
 -- הדביקו ב-SQL Editor -> New query -> Run
+
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists public.seasun_visitors (
   id          bigint generated always as identity primary key,
@@ -15,40 +18,59 @@ create table if not exists public.seasun_visitors (
 );
 create index if not exists seasun_visitors_status_idx on public.seasun_visitors (status, created_at);
 
--- רשימת עובדי הקבלה המורשים (רק מי שברשימה רואה ומטפל באורחים)
-create table if not exists public.seasun_staff (
-  user_id uuid primary key references auth.users(id) on delete cascade
+-- סיסמת הקבלה נשמרת מוצפנת (bcrypt)
+create table if not exists public.seasun_settings (
+  key   text primary key,
+  value text not null
 );
-alter table public.seasun_staff enable row level security;   -- בלי policies: אף אחד לא ניגש ישירות
-
-create or replace function public.seasun_is_staff()
-returns boolean language sql stable security definer set search_path = public as
-$$ select exists (select 1 from public.seasun_staff where user_id = auth.uid()) $$;
-revoke all on function public.seasun_is_staff() from public;
-grant execute on function public.seasun_is_staff() to authenticated;
 
 alter table public.seasun_visitors enable row level security;
+alter table public.seasun_settings enable row level security;  -- בלי policies: אין גישה ישירה
 
--- אורח (anon): רק להוסיף רישום חדש. לא קורא ולא משנה.
+-- אורח (anon): רק להוסיף רישום חדש. אי אפשר לקרוא או לשנות ישירות.
 drop policy if exists seasun_guest_insert on public.seasun_visitors;
 create policy seasun_guest_insert on public.seasun_visitors
   for insert to anon
   with check (status = 'pending' and handled_at is null);
 
--- קבלה: רק עובדים ברשימה
-drop policy if exists seasun_staff_select on public.seasun_visitors;
-create policy seasun_staff_select on public.seasun_visitors
-  for select to authenticated using (public.seasun_is_staff());
-drop policy if exists seasun_staff_update on public.seasun_visitors;
-create policy seasun_staff_update on public.seasun_visitors
-  for update to authenticated using (public.seasun_is_staff()) with check (public.seasun_is_staff());
+-- בדיקת סיסמה. בכישלון ממתינים שנייה כדי להאט ניחושים.
+create or replace function public.seasun_check(pw text)
+returns boolean language plpgsql security definer set search_path = public, extensions as $$
+declare ok boolean;
+begin
+  select exists (select 1 from public.seasun_settings
+                 where key = 'reception' and value = crypt(coalesce(pw, ''), value)) into ok;
+  if not ok then perform pg_sleep(1); end if;
+  return ok;
+end $$;
+
+-- רשימת אורחים לקבלה: הממתינים + כל מה שנרשם היום
+create or replace function public.seasun_list(pw text)
+returns setof public.seasun_visitors language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if not public.seasun_check(pw) then raise exception 'unauthorized'; end if;
+  return query select * from public.seasun_visitors
+    where status = 'pending'
+       or created_at >= (date_trunc('day', now() at time zone 'Asia/Jerusalem') at time zone 'Asia/Jerusalem')
+    order by created_at;
+end $$;
+
+-- טיפול באורח: entered / rejected / pending (ביטול)
+create or replace function public.seasun_handle(pw text, vid bigint, new_status text)
+returns void language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if not public.seasun_check(pw) then raise exception 'unauthorized'; end if;
+  if new_status not in ('pending','entered','rejected') then raise exception 'bad status'; end if;
+  update public.seasun_visitors
+     set status = new_status,
+         handled_at = case when new_status = 'pending' then null else now() end
+   where id = vid;
+end $$;
 
 -- האורח בודק רק את הסטטוס של הרישום שלו, לפי טוקן אקראי
 create or replace function public.seasun_get_status(t uuid)
 returns text language sql security definer set search_path = public as
 $$ select status from public.seasun_visitors where token = t $$;
-revoke all on function public.seasun_get_status(uuid) from public;
-grant execute on function public.seasun_get_status(uuid) to anon, authenticated;
 
 -- הגבלת ספאם: עד 5 רישומים לאותו טלפון ב-10 דקות
 create or replace function public.seasun_limit_spam()
@@ -64,8 +86,15 @@ drop trigger if exists seasun_visitors_limit on public.seasun_visitors;
 create trigger seasun_visitors_limit before insert on public.seasun_visitors
   for each row execute function public.seasun_limit_spam();
 
--- ============ שלב נפרד, אחרי שיצרתם משתמש לקבלה ב-Authentication -> Users ============
--- החליפו את האימייל והריצו:
--- insert into public.seasun_staff (user_id)
---   select id from auth.users where email = 'reception@example.com'
---   on conflict do nothing;
+-- הרשאות הרצה: רק מה שהאתר צריך
+revoke all on function public.seasun_check(text) from public;
+revoke all on function public.seasun_list(text) from public;
+revoke all on function public.seasun_handle(text, bigint, text) from public;
+revoke all on function public.seasun_get_status(uuid) from public;
+grant execute on function public.seasun_list(text), public.seasun_handle(text, bigint, text),
+                          public.seasun_get_status(uuid) to anon, authenticated;
+
+-- ============ הגדרת סיסמת הקבלה - הריצו בנפרד, אחרי שבחרתם סיסמה ארוכה ============
+-- insert into public.seasun_settings (key, value)
+--   values ('reception', extensions.crypt('הסיסמה-שלכם-כאן', extensions.gen_salt('bf')))
+--   on conflict (key) do update set value = excluded.value;
