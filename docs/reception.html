@@ -22,7 +22,10 @@
   .ph { direction: ltr; unicode-bidi: embed; display: inline-block; font-variant-numeric: tabular-nums; white-space: nowrap; }
   /* כל השורות בפריסה אופקית אחת, בעמודות קבועות שמיושרות בין שורות */
   .r-log { grid-template-columns: 150px 125px minmax(0, 1fr) 120px 125px 56px; }
-  .r-pend { grid-template-columns: 190px 150px 125px minmax(0, 1fr) auto; }
+  .r-pend { grid-template-columns: 175px 108px 96px 125px minmax(0, 1fr) auto; }
+  .tag { display: inline-flex; align-items: center; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .tag.new { background: color-mix(in srgb, var(--sun) 30%, transparent); color: var(--warn); }
+  .tag.known { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok); }
   .row > * { min-width: 0; }
   .row b, .row .host { font-weight: 600; overflow-wrap: anywhere; }
   .row-head { display: grid; gap: 12px; padding: 0 17px 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
@@ -171,7 +174,8 @@ function render(newIds = new Set()) {
   $('#pending').innerHTML = p.length ? HEAD_PEND + p.map(v => `
     <div class="row r-pend ${newIds.has(v.id) ? 'new' : ''}" data-plate="${esc(v.plate)}">
       <span class="plate-chip">${esc(fmtPlate(v.plate))}</span>
-      <span class="small">${esc(ago(v.created_at))}, ${esc(time(v.created_at))}</span>
+      <span>${tagHtml(v.plate)}</span>
+      <span class="small" style="white-space:nowrap">${esc(ago(v.created_at))}</span>
       <a class="ph" href="tel:${esc(v.phone)}" style="color:inherit">${esc(fmtPhone(v.phone))}</a>
       <b class="host">${esc(v.host)}</b>
       <div class="actions"><button class="ok" onclick="act(${v.id},'enter')">הכנס ✔</button><button class="bad" onclick="act(${v.id},'reject')">דחה</button></div>
@@ -182,7 +186,26 @@ function render(newIds = new Set()) {
 
 // שורת יומן אחת בפריסה אופקית: רכב, טלפון, דייר, זמן רישום, סטטוס, ביטול
 const HEAD_LOG = '<div class="row-head r-log"><span>מספר רכב</span><span>טלפון</span><span>מגיע אל</span><span>נרשם</span><span>סטטוס</span><span></span></div>';
-const HEAD_PEND = '<div class="row-head r-pend"><span>מספר רכב</span><span>הגיע</span><span>טלפון</span><span>מגיע אל</span><span></span></div>';
+const HEAD_PEND = '<div class="row-head r-pend"><span>מספר רכב</span><span>אורח</span><span>הגיע</span><span>טלפון</span><span>מגיע אל</span><span></span></div>';
+
+// תג "אושר בעבר" או "אורח חדש", לפי הרישומים הקודמים של אותו רכב
+let known = {}, knownErrAt = 0;
+async function refreshKnown(rows) {
+  const now = Date.now();
+  const need = [...new Set(rows.map(v => v.plate))].filter(p => !known[p] || now - known[p].ts > 60000);
+  if (!need.length || now - knownErrAt < 60000) return;
+  const {data: res, error} = await sb.rpc('seasun_known', {pw: getPw(), plates: need});
+  if (error) { knownErrAt = now; return; }
+  need.forEach(p => known[p] = {n: 0, last: null, ts: now});
+  res.forEach(r => known[r.plate] = {n: Number(r.entered_count), last: r.last_entered, ts: now});
+}
+function tagHtml(plate) {
+  const k = known[plate];
+  if (!k) return '';
+  return k.n > 0
+    ? `<span class="tag known" title="אושר ${k.n} פעמים, לאחרונה ב-${esc(fmtDate(k.last))}">אושר בעבר${k.n > 1 ? ' ×' + k.n : ''}</span>`
+    : '<span class="tag new">אורח חדש</span>';
+}
 const logRow = (v, when, canUndo = false) => `
   <div class="row r-log" data-plate="${esc(v.plate)}">
     <span class="plate-chip sm">${esc(fmtPlate(v.plate))}</span>
@@ -199,6 +222,7 @@ async function act(id, action) {
   const st = action === 'undo' ? 'pending' : action === 'enter' ? 'entered' : 'rejected';
   const {error} = await sb.rpc('seasun_handle', {pw: getPw(), vid: id, new_status: st});
   if (error) return alert('הפעולה נכשלה. נסו שוב.');
+  known = {};
   load();
   if (tab !== 'today' || $('#search').value.trim()) refreshView();
 }
@@ -214,6 +238,7 @@ async function load() {
     pending: rows.filter(v => v.status === 'pending'),
     done: rows.filter(v => v.status !== 'pending').sort((x, y) => new Date(y.handled_at) - new Date(x.handled_at))
   };
+  await refreshKnown(data.pending);
   const ids = new Set(data.pending.map(v => v.id));
   const fresh = seen ? new Set([...ids].filter(i => !seen.has(i))) : new Set();
   if (fresh.size) beep();
